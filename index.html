@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filling Vessels — height vs volume</title>
+<meta name="description" content="VCE Year 11 introduction to calculus: pour water into a vessel at a constant rate and watch the height-vs-volume graph build in real time.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <h1>Filling Vessels <span class="sub">height <em>h</em> against volume poured <em>V</em></span></h1>
+  <p class="tag">Water is poured in at a <strong>constant flow rate</strong>. Every vessel holds the same <strong>1000 mL</strong> and is <strong>20 cm</strong> tall.</p>
+</header>
+
+<main class="stage">
+  <!-- LEFT: vessel -->
+  <section class="panel vessel-panel">
+    <div class="panel-head">
+      <h2>Vessel</h2>
+      <div class="readout" id="readoutH"><span class="k">h</span><span class="v">0.0</span><span class="u">cm</span></div>
+    </div>
+    <div class="canvas-wrap"><canvas id="vesselCanvas"></canvas></div>
+    <p class="shape-hint" id="shapeHint"></p>
+  </section>
+
+  <!-- RIGHT: graph -->
+  <section class="panel graph-panel">
+    <div class="panel-head">
+      <h2>Graph of <em>h</em> against <em>V</em></h2>
+      <div class="readout" id="readoutV"><span class="k">V</span><span class="v">0</span><span class="u">mL</span></div>
+    </div>
+    <div class="canvas-wrap"><canvas id="graphCanvas"></canvas></div>
+    <p class="shape-hint" id="gradientHint">Press <strong>Start</strong> — watch how steeply the graph rises.</p>
+  </section>
+</main>
+
+<section class="controls">
+  <div class="control-group shapes" role="radiogroup" aria-label="Vessel shape">
+    <span class="label">Vessel shape</span>
+    <div class="shape-buttons" id="shapeButtons"></div>
+  </div>
+
+  <div class="control-group">
+    <span class="label">Pouring</span>
+    <div class="buttons">
+      <button id="btnStart" class="btn primary">▶ Start</button>
+      <button id="btnReset" class="btn">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <span class="label" id="speedLabel">Flow rate <output for="speed" id="speedOut">100 mL/s</output></span>
+    <input type="range" id="speed" min="0.4" max="2" step="0.2" value="1" aria-labelledby="speedLabel">
+  </div>
+
+  <div class="control-group">
+    <span class="label">Teaching aid</span>
+    <label class="check"><input type="checkbox" id="showTangent"> Show gradient <em>dh/dV</em></label>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>Constant flow means <em>V = Q t</em>: the wider the vessel at the water line, the slower <em>h</em> rises — so the graph is flatter where the vessel is wide, steeper where it is narrow.</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

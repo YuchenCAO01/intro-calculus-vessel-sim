@@ -53,8 +53,9 @@ python3 -m http.server 8000    # then open http://localhost:8000
 
 ## Deployment
 
-Pushing to `main` deploys via [.github/workflows/pages.yml](.github/workflows/pages.yml).
-In the repository, set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**.
+Pushing to `main` deploys via [.github/workflows/pages.yml](.github/workflows/pages.yml). The
+workflow passes `enablement: true` to `actions/configure-pages`, so it creates the Pages site and
+sets the source to **GitHub Actions** on the first successful run — no manual setup needed.
 
 ## Licence
 

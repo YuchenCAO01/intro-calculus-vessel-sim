@@ -24,14 +24,14 @@ const SHAPES = [
   },
   {
     id: 'wider',
-    name: 'Wider at the top',
+    name: 'Wider at top',
     icon: 'M8,2 L4,22 L20,22 L16,2',
     hint: 'Higher up there is more room to fill, so <em>h</em> rises more and more slowly — the graph <strong>bends over</strong> (concave down).',
     r: (u) => 0.45 + 0.75 * u
   },
   {
     id: 'narrower',
-    name: 'Narrower at the top',
+    name: 'Narrower at top',
     icon: 'M4,2 L8,22 L16,22 L20,2',
     hint: 'Higher up there is less room to fill, so <em>h</em> rises faster and faster — the graph <strong>curves upwards</strong> (concave up).',
     r: (u) => 1.2 - 0.75 * u
@@ -47,6 +47,13 @@ const SHAPES = [
       if (u < 0.86) return 1.15;                                  // wide body
       return lerp(1.15, 0.55, smooth((u - 0.86) / 0.14));         // neck
     }
+  },
+  {
+    id: 'step',
+    name: 'Sudden step',
+    icon: 'M9,2 L9,11 L4,11 L4,22 L20,22 L20,11 L15,11 L15,2',
+    hint: 'The width jumps with <strong>no slope to ease into</strong>. The graph is two straight lines meeting at a <strong>sharp corner</strong> — the gradient changes instantly, it does not curve.',
+    r: (u) => (u < 0.5 ? 1.0 : 0.42)
   }
 ];
 
@@ -176,21 +183,41 @@ function fit(canvas, ctx) {
 }
 new ResizeObserver(() => draw()).observe(document.querySelector('.stage'));
 
+/* Both canvases must show h = 0 .. 20 cm at exactly the same screen heights, so the water line
+ * always lines up with its point on the graph. Work out the tallest band that fits inside both
+ * (allowing each one the padding it needs), in viewport coordinates. */
+const vesselFs = (w) => Math.max(10, Math.min(16, w / 22));
+const graphFs  = (w) => Math.max(10, Math.min(17, w / 40));
+const V_PAD_TOP = 3.6, V_PAD_BOTTOM = 2.2, G_PAD_TOP = 1.8, G_PAD_BOTTOM = 4.2;
+
+function sharedBand() {
+  const vr = vesselCanvas.getBoundingClientRect();
+  const gr = graphCanvas.getBoundingClientRect();
+  if (!vr.height || !gr.height) return null;
+  const vfs = vesselFs(vr.width), gfs = graphFs(gr.width);
+  const top = Math.max(vr.top + vfs * V_PAD_TOP, gr.top + gfs * G_PAD_TOP);
+  const bottom = Math.min(vr.bottom - vfs * V_PAD_BOTTOM, gr.bottom - gfs * G_PAD_BOTTOM);
+  if (bottom - top < 120) return null; // stacked layout: no useful overlap, fall back
+  return { top, bottom, vesselTop: vr.top, graphTop: gr.top };
+}
+
 /* ---------- vessel drawing ---------- */
-function drawVessel() {
+function drawVessel(band) {
   const { w, h } = fit(vesselCanvas, vctx);
   const m = model();
-  const fs = Math.max(10, Math.min(16, w / 22));
-  const padL = fs * 4.6, padR = fs * 3.0, padT = fs * 3.6, padB = fs * 2.2;
-  const boxW = w - padL - padR, boxH = h - padT - padB;
-  if (boxW <= 20 || boxH <= 20) return;
+  const fs = vesselFs(w);
+  const padL = fs * 4.6, padR = fs * 3.0;
+  const boxW = w - padL - padR;
+  const topY = band ? band.top - band.vesselTop : fs * V_PAD_TOP;
+  const baseY = band ? band.bottom - band.vesselTop : h - fs * V_PAD_BOTTOM;
+  if (boxW <= 20 || baseY - topY <= 20) return;
 
-  // one scale for every vessel: same cm → px both ways
-  const scale = Math.min(boxW / (2 * R_MAX_ALL), boxH / HEIGHT_CM);
-  const baseY = padT + boxH;
+  // vertical scale is shared with the graph; horizontal matches it unless the panel is too narrow
+  const scaleY = (baseY - topY) / HEIGHT_CM;
+  const scaleX = Math.min(scaleY, boxW / (2 * R_MAX_ALL));
   const cx = padL + boxW / 2;
-  const X = (rcm) => cx + rcm * scale;
-  const Y = (hcm) => baseY - hcm * scale;
+  const X = (rcm) => cx + rcm * scaleX;
+  const Y = (hcm) => baseY - hcm * scaleY;
 
   const st = stateAt(m, state.V);
   const waterY = Y(st.h);
@@ -234,6 +261,26 @@ function drawVessel() {
     for (let i = N - 1; i >= 0; i--) vctx.lineTo(X(m.radius[i]), Y(m.height[i]));
     vctx.closePath();
   };
+
+  // ---- bench line + soft shadow so the vessel sits on something ----
+  vctx.save();
+  const benchR = w - padR * 0.3;
+  const bg = vctx.createLinearGradient(axX, 0, benchR, 0);
+  bg.addColorStop(0, 'rgba(203,214,232,0)');
+  bg.addColorStop(0.15, '#cbd6e8');
+  bg.addColorStop(0.85, '#cbd6e8');
+  bg.addColorStop(1, 'rgba(203,214,232,0)');
+  vctx.strokeStyle = bg;
+  vctx.lineWidth = 2;
+  vctx.beginPath();
+  vctx.moveTo(axX, baseY + fs * 0.12);
+  vctx.lineTo(benchR, baseY + fs * 0.12);
+  vctx.stroke();
+  vctx.fillStyle = 'rgba(30,50,90,.10)';
+  vctx.beginPath();
+  vctx.ellipse(cx, baseY + fs * 0.22, m.radius[0] * scaleX * 1.18, fs * 0.26, 0, 0, Math.PI * 2);
+  vctx.fill();
+  vctx.restore();
 
   // ---- pouring stream ----
   if (state.running) {
@@ -289,7 +336,7 @@ function drawVessel() {
       const ph = ((state.t * 1.6 + k * 0.5) % 1);
       vctx.globalAlpha = (1 - ph) * 0.8;
       vctx.beginPath();
-      vctx.ellipse(cx, waterY + 2, 6 + ph * rSurface * scale * 0.9, (6 + ph * rSurface * scale * 0.9) * 0.22, 0, 0, Math.PI * 2);
+      vctx.ellipse(cx, waterY + 2, 6 + ph * rSurface * scaleX * 0.9, (6 + ph * rSurface * scaleX * 0.9) * 0.22, 0, 0, Math.PI * 2);
       vctx.stroke();
     }
     vctx.globalAlpha = 1;
@@ -302,7 +349,7 @@ function drawVessel() {
     vctx.strokeStyle = 'rgba(255,255,255,.85)';
     vctx.lineWidth = 1.4;
     vctx.beginPath();
-    vctx.ellipse(cx, waterY, rSurface * scale, Math.max(2, rSurface * scale * 0.16), 0, 0, Math.PI * 2);
+    vctx.ellipse(cx, waterY, rSurface * scaleX, Math.max(2, rSurface * scaleX * 0.16), 0, 0, Math.PI * 2);
     vctx.fill(); vctx.stroke();
   }
 
@@ -337,12 +384,14 @@ function drawVessel() {
 }
 
 /* ---------- graph drawing ---------- */
-function drawGraph() {
+function drawGraph(band) {
   const { w, h } = fit(graphCanvas, gctx);
   const m = model();
-  const fs = Math.max(10, Math.min(17, w / 40));
-  const padL = fs * 4.6, padR = fs * 2.4, padT = fs * 1.8, padB = fs * 4.2;
-  const pw = w - padL - padR, ph = h - padT - padB;
+  const fs = graphFs(w);
+  const padL = fs * 4.6, padR = fs * 2.4;
+  const padT = band ? band.top - band.graphTop : fs * G_PAD_TOP;
+  const ph = (band ? band.bottom - band.graphTop : h - fs * G_PAD_BOTTOM) - padT;
+  const pw = w - padL - padR;
   if (pw <= 30 || ph <= 30) return;
 
   const Vmax = CAPACITY_ML, Hmax = HEIGHT_CM;
@@ -395,7 +444,7 @@ function drawGraph() {
   gctx.fillStyle = '#12203a';
   gctx.font = `italic 700 ${fs * 1.15}px "Iowan Old Style", Georgia, serif`;
   gctx.textAlign = 'center'; gctx.textBaseline = 'alphabetic';
-  gctx.fillText('V  (mL of water poured)', padL + pw / 2, h - fs * 0.6);
+  gctx.fillText('V  (mL of water poured)', padL + pw / 2, Math.min(padT + ph + fs * 2.9, h - fs * 0.4));
   gctx.save();
   gctx.translate(fs * 1.15, padT + ph / 2);
   gctx.rotate(-Math.PI / 2);
@@ -439,6 +488,7 @@ function drawGraph() {
       const dV = Vmax * 0.17;
       const p = [[state.V - dV, st.h - slope * dV], [state.V + dV, st.h + slope * dV]];
       gctx.save();
+      gctx.beginPath(); gctx.rect(padL, padT, pw, ph); gctx.clip();   // keep the tangent inside the axes
       gctx.setLineDash([7, 5]);
       gctx.strokeStyle = '#e0642b';
       gctx.lineWidth = 2;
@@ -448,7 +498,7 @@ function drawGraph() {
       gctx.textAlign = 'left'; gctx.textBaseline = 'middle';
       const label = `dh/dV \u2248 ${slope.toFixed(3)} cm/mL`;
       const tw = gctx.measureText(label).width;
-      const lx = Math.min(X(state.V) + fs * 1.1, padL + pw - tw - fs * 0.6);
+      const lx = Math.min(X(state.V) + fs * 1.1, padL + pw - tw - fs * 1.1);
       const ly = Math.max(Y(st.h) - fs * 1.9, padT + fs * 1.2);
       gctx.fillStyle = 'rgba(255,255,255,.92)';
       gctx.beginPath();
@@ -498,7 +548,12 @@ function updateReadouts() {
 }
 
 /* ---------- loop ---------- */
-function draw() { drawVessel(); drawGraph(); updateReadouts(); }
+function draw() {
+  const band = sharedBand();
+  drawVessel(band);
+  drawGraph(band);
+  updateReadouts();
+}
 
 let last = null;
 function frame(now) {

@@ -68,14 +68,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
 .shape-hint{
   margin:6px 2px 0;color:var(--ink-soft);font-size:clamp(12px,1.05vw,15px);
-  min-height:1.4em;line-height:1.35;
+  min-height:2.8em;line-height:1.35;
 }
 .shape-hint strong{color:var(--ink)}
 .shape-hint em{font-family:"Iowan Old Style",Georgia,serif;font-style:italic;color:var(--ink)}
 
 /* ---------- controls ---------- */
 .controls{
-  display:flex;flex-wrap:wrap;align-items:center;gap:clamp(10px,1.4vw,26px);
+  display:flex;flex-wrap:wrap;align-items:center;gap:clamp(10px,1.15vw,20px);
   background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);
   box-shadow:var(--shadow);padding:clamp(10px,1vw,16px) clamp(12px,1.3vw,20px);
 }
@@ -84,8 +84,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
   font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
 }
 .control-group .label output{color:var(--accent);letter-spacing:0;text-transform:none;font-size:12px}
-.shapes{flex:1 1 380px}
-.shape-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.shapes{flex:1 1 420px}
+.shape-buttons{display:flex;flex-wrap:wrap;gap:6px}
 .buttons{display:flex;gap:8px}
 
 .btn{
@@ -102,10 +102,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .btn:focus-visible,.shape-btn:focus-visible,input:focus-visible{outline:3px solid #93c0ff;outline-offset:2px}
 
 .shape-btn{
-  font:inherit;font-weight:600;font-size:clamp(12px,1.02vw,15px);
-  display:flex;align-items:center;gap:.55em;
+  font:inherit;font-weight:600;font-size:clamp(12px,.95vw,14px);
+  display:flex;align-items:center;gap:.45em;
   border:1px solid var(--line);background:#fff;color:var(--ink);
-  padding:.42em .8em .42em .5em;border-radius:12px;cursor:pointer;
+  padding:.42em .68em .42em .44em;border-radius:12px;cursor:pointer;
   transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
 }
 .shape-btn svg{display:block;flex:0 0 auto}
@@ -122,6 +122,10 @@ input[type=range]{width:clamp(120px,12vw,190px);accent-color:var(--accent)}
 .foot em{font-family:"Iowan Old Style",Georgia,serif;font-style:italic;color:var(--ink)}
 
 /* ---------- narrow screens ---------- */
+/* below ~1400px the five shape buttons need a row of their own */
+@media (max-width:1399px){
+  .shapes{flex:1 1 100%}
+}
 @media (max-width:860px){
   .stage{grid-template-columns:1fr;grid-template-rows:minmax(240px,1fr) minmax(240px,1fr)}
   .controls{gap:14px}

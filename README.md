@@ -11,12 +11,15 @@ water height **h** against volume poured **V** is drawn live beside it.
 | Vessel | Graph of *h* against *V* |
 | --- | --- |
 | Constant width | straight line — constant gradient |
-| Wider at the top | concave down — gradient decreasing |
-| Narrower at the top | concave up — gradient increasing |
+| Wider at top | concave down — gradient decreasing |
+| Narrower at top | concave up — gradient increasing |
 | Irregular width | straight pieces where the sides are straight, curves where the width changes |
+| Sudden step | two straight lines meeting at a sharp corner — the gradient jumps, with no curve |
 
 Every vessel is scaled to the **same capacity (1000 mL)** and the **same height (20 cm)**, so the
-four graphs start and finish at the same point and can be compared directly.
+graphs all start and finish at the same point and can be compared directly. The two panels share
+one vertical scale: *h* = 0 … 20 cm sits at exactly the same screen heights on both sides, so the
+water line and its point on the graph are always level with each other.
 
 ## Controls
 
@@ -53,9 +56,9 @@ python3 -m http.server 8000    # then open http://localhost:8000
 
 ## Deployment
 
-Pushing to `main` deploys via [.github/workflows/pages.yml](.github/workflows/pages.yml). The
-workflow passes `enablement: true` to `actions/configure-pages`, so it creates the Pages site and
-sets the source to **GitHub Actions** on the first successful run — no manual setup needed.
+Served straight from the repository: **Settings → Pages → Build and deployment → Deploy from a
+branch → `main` / `/ (root)`**. Every push to `main` republishes the site — there is nothing to
+build, so no Actions workflow is involved.
 
 ## Licence
 

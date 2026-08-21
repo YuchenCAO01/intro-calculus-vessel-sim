@@ -60,6 +60,10 @@ Served straight from the repository: **Settings → Pages → Build and deployme
 branch → `main` / `/ (root)`**. Every push to `main` republishes the site — there is nothing to
 build, so no Actions workflow is involved.
 
+GitHub Pages serves assets with `cache-control: max-age=600`, so `index.html` loads `styles.css`
+and `app.js` with a `?v=` query string. **Bump that number when you change either file**, otherwise
+returning visitors keep the cached copy for up to ten minutes.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
